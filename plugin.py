@@ -192,7 +192,7 @@ class BasePlugin:
             return
 
         self._device_prefix = new_prefix
-        for unit, name, _, _, _ in SENSOR_DEFINITIONS:
+        for unit, name, *_ in SENSOR_DEFINITIONS:
             if unit in Devices:
                 target_name = self._full_device_name(name)
                 if Devices[unit].Name != target_name:

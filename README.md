@@ -75,7 +75,7 @@ Example: `[ASSET-1234] Server Name`
 | 1 | `[identifier] Server Name` | Name of the server |
 | 2 | `[identifier] Server FQDN` | Fully qualified domain name |
 | 3 | `[identifier] Server Power State` | Power status (on/off) |
-| 4 | `[identifier] Server Power On Time` | Time powered on |
+| 4 | `[identifier] Server Power On Time` | Time powered on (days/hours/minutes) |
 | 5 | `[identifier] Server Asset Tag` | Server asset tag |
 | 6 | `[identifier] Server UID Light` | UID light status |
 | 7 | `[identifier] Server Health` | Hardware health overview |

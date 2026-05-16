@@ -55,7 +55,6 @@ UNIT_SERVER_HOST_DATA    = 10
 UNIT_FANS                = 12
 UNIT_CPU_TEMP            = 14
 UNIT_INLET_TEMP          = 15
-UNIT_ILO_IP              = 16
 UNIT_ILO_FIRMWARE        = 17
 UNIT_STORAGE             = 19
 
@@ -74,7 +73,6 @@ SENSOR_DEFINITIONS = [
     (UNIT_FANS,             "Fan 1 Speed",                     243,  6, {}),
     (UNIT_CPU_TEMP,         "CPU Temperature",                 80,  5,  {"Custom": "1;C"}),
     (UNIT_INLET_TEMP,       "Inlet Ambient Temperature",       80,  5,  {"Custom": "1;C"}),
-    (UNIT_ILO_IP,           "iLO IP Address",                  243, 19, {}),
     (UNIT_STORAGE,          "Storage Status",                  243, 22, {}),
     (UNIT_ILO_FIRMWARE,     "iLO Firmware Version",            243, 19, {}),
 ]
@@ -358,14 +356,6 @@ class BasePlugin:
                 update(UNIT_ILO_FIRMWARE, str(ilo_info))
         except Exception as err:
             Domoticz.Error(f"Fout bij get_fw_version: {err}")
-
-        try:
-            net = ilo.get_network_settings()
-            if isinstance(net, dict):
-                update(UNIT_ILO_IP, net.get("ip_address", "?"))
-        except Exception as err:
-            Domoticz.Error(f"Fout bij iLO IP: {err}")
-
 
         # --- Storage / RAID ---
         try:

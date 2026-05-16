@@ -371,6 +371,17 @@ class BasePlugin:
             parts = [_fmt_host_field(k, *collected[k]) for k in IMPORTANT_KEYS_ORDER if k in collected]
             return " | ".join(parts) if parts else "N/A"
 
+        def _collect_host_fields(data):
+            collected = {}
+            if not isinstance(data, dict):
+                return collected
+            for key, val in data.items():
+                norm = key.lower().strip()
+                if norm in IMPORTANT_KEYS and norm not in collected:
+                    if isinstance(val, str) and val.strip() and val.isprintable():
+                        collected[norm] = (key.replace("_", " ").title(), val.strip())
+            return collected
+
         host_data = safe_get(ilo.get_host_data)
         serial_number = None
         if isinstance(host_data, list):
@@ -378,21 +389,14 @@ class BasePlugin:
             for entry in host_data:
                 if not isinstance(entry, dict):
                     continue
-                for key, val in entry.items():
-                    norm = key.lower().strip()
-                    if norm in IMPORTANT_KEYS and norm not in collected:
-                        if isinstance(val, str) and val.strip() and val.isprintable():
-                            collected[norm] = (key.replace("_", " ").title(), val.strip())
-            serial_number = collected.get("serial number", ("", None))[1]
+                for norm, pair in _collect_host_fields(entry).items():
+                    if norm not in collected:
+                        collected[norm] = pair
+            serial_number = collected.get("serial number", (None, None))[1]
             update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         elif isinstance(host_data, dict):
-            collected = {}
-            for key, val in host_data.items():
-                norm = key.lower().strip()
-                if norm in IMPORTANT_KEYS and norm not in collected:
-                    if isinstance(val, str) and val.strip() and val.isprintable():
-                        collected[norm] = (key.replace("_", " ").title(), val.strip())
-            serial_number = collected.get("serial number", ("", None))[1]
+            collected = _collect_host_fields(host_data)
+            serial_number = collected.get("serial number", (None, None))[1]
             update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         else:
             update(UNIT_SERVER_HOST_DATA, str(host_data)[:300])

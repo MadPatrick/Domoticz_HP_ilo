@@ -314,6 +314,15 @@ class BasePlugin:
         # --- Host data: toon alleen de meest relevante velden ---
         IMPORTANT_KEYS_ORDER = ("product name", "serial number", "family", "date")
         IMPORTANT_KEYS = set(IMPORTANT_KEYS_ORDER)
+        NO_LABEL_KEYS = {"product name"}  # toon alleen de waarde, zonder label
+
+        def _fmt_host_field(norm, lbl, val):
+            return val if norm in NO_LABEL_KEYS else f"{lbl}: {val}"
+
+        def _render_host_data(collected):
+            parts = [_fmt_host_field(k, *collected[k]) for k in IMPORTANT_KEYS_ORDER if k in collected]
+            return " | ".join(parts) if parts else "N/A"
+
         host_data = safe_get(ilo.get_host_data)
         if isinstance(host_data, list):
             collected = {}
@@ -325,8 +334,7 @@ class BasePlugin:
                     if norm in IMPORTANT_KEYS and norm not in collected:
                         if isinstance(val, str) and val.strip() and val.isprintable():
                             collected[norm] = (key.replace("_", " ").title(), val.strip())
-            ordered = [collected[k] for k in IMPORTANT_KEYS_ORDER if k in collected]
-            update(UNIT_SERVER_HOST_DATA, " | ".join(f"{lbl}: {v}" for lbl, v in ordered) if ordered else "N/A")
+            update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         elif isinstance(host_data, dict):
             collected = {}
             for key, val in host_data.items():
@@ -334,8 +342,7 @@ class BasePlugin:
                 if norm in IMPORTANT_KEYS and norm not in collected:
                     if isinstance(val, str) and val.strip() and val.isprintable():
                         collected[norm] = (key.replace("_", " ").title(), val.strip())
-            ordered = [collected[k] for k in IMPORTANT_KEYS_ORDER if k in collected]
-            update(UNIT_SERVER_HOST_DATA, " | ".join(f"{lbl}: {v}" for lbl, v in ordered) if ordered else "N/A")
+            update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         else:
             update(UNIT_SERVER_HOST_DATA, str(host_data)[:300])
 

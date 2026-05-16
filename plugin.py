@@ -46,17 +46,17 @@ from datetime import datetime
 UNIT_SERVER_NAME         = 1
 UNIT_SERVER_FQDN         = 2
 UNIT_POWER_STATUS        = 3
-UNIT_POWER_ON_TIME       = 5
-UNIT_ASSET_TAG           = 6
-UNIT_UID_STATUS          = 7
-UNIT_HEALTH              = 8
-UNIT_NETWORK_SETTINGS    = 9
-UNIT_SERVER_HOST_DATA    = 10
-UNIT_FANS                = 12
-UNIT_CPU_TEMP            = 14
-UNIT_INLET_TEMP          = 15
-UNIT_ILO_FIRMWARE        = 17
-UNIT_STORAGE             = 19
+UNIT_POWER_ON_TIME       = 4
+UNIT_ASSET_TAG           = 5
+UNIT_UID_STATUS          = 6
+UNIT_HEALTH              = 7
+UNIT_NETWORK_SETTINGS    = 8
+UNIT_SERVER_HOST_DATA    = 9
+UNIT_FANS                = 10
+UNIT_CPU_TEMP            = 11
+UNIT_INLET_TEMP          = 12
+UNIT_ILO_FIRMWARE        = 13
+UNIT_STORAGE             = 14
 
 # Definitie: (unit, naam, type, subtype, opties-dict of None)
 #   Domoticz type 243 = Algemeen, subtype 19 = Tekst

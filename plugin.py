@@ -88,6 +88,7 @@ class BasePlugin:
         self._heartbeats_per_poll = 1
         self._debug = False
         self._icon_id = 0
+        self._device_prefix = ""
 
     # ------------------------------------------------------------------
     # Lifecycle-callbacks
@@ -145,7 +146,7 @@ class BasePlugin:
             if unit not in Devices:
                 icon = self._icon_id if unit != UNIT_HEALTH else 0
                 Domoticz.Device(
-                    Name=name,
+                    Name=self._full_device_name(name),
                     Unit=unit,
                     Type=type_num,
                     Subtype=subtype,
@@ -153,7 +154,55 @@ class BasePlugin:
                     Image=icon,
                     Used=1,
                 ).Create()
-                Domoticz.Log(f"Apparaat aangemaakt: {name} (unit {unit})")
+                Domoticz.Log(f"Apparaat aangemaakt: {self._full_device_name(name)} (unit {unit})")
+
+    def _full_device_name(self, base_name):
+        if not self._device_prefix:
+            return base_name
+        return f"{self._device_prefix} {base_name}"
+
+    def _clean_identifier(self, value):
+        if value is None:
+            return None
+        candidate = str(value).strip()
+        if not candidate:
+            return None
+        if candidate.upper() in {
+            "N/A",
+            "NA",
+            "NONE",
+            "NULL",
+            "UNKNOWN",
+            "NOT AVAILABLE",
+            "NOT SET",
+        }:
+            return None
+        return candidate
+
+    def _update_device_prefix(self, asset_tag, serial_number, server_name):
+        # Prioriteit voor herkenbare naam: asset tag -> serienummer -> server naam -> geconfigureerd host/IP.
+        for raw in (asset_tag, serial_number, server_name, Parameters["Address"]):
+            identifier = self._clean_identifier(raw)
+            if identifier:
+                new_prefix = f"[{identifier}]"
+                break
+        else:
+            new_prefix = ""
+
+        if new_prefix == self._device_prefix:
+            return
+
+        self._device_prefix = new_prefix
+        for unit, name, _type_num, _subtype, _options in SENSOR_DEFINITIONS:
+            if unit in Devices:
+                target_name = self._full_device_name(name)
+                if Devices[unit].Name != target_name:
+                    Devices[unit].Update(
+                        nValue=Devices[unit].nValue,
+                        sValue=Devices[unit].sValue,
+                        Name=target_name,
+                    )
+        Domoticz.Log(f"Device naam-prefix ingesteld op: {self._device_prefix or '(geen)'}")
 
     def _connect_and_update(self):
         """Maak verbinding met iLO en ververs alle sensoren."""
@@ -199,7 +248,8 @@ class BasePlugin:
                     Domoticz.Log(f"Unit {unit} bijgewerkt: {svalue[:120]}")
 
         # --- Server naam & FQDN ---
-        update(UNIT_SERVER_NAME, safe_get(ilo.get_server_name))
+        server_name = safe_get(ilo.get_server_name)
+        update(UNIT_SERVER_NAME, server_name)
         update(UNIT_SERVER_FQDN, safe_get(ilo.get_server_fqdn))
 
         # --- Voedingsstatus ---
@@ -321,28 +371,41 @@ class BasePlugin:
             parts = [_fmt_host_field(k, *collected[k]) for k in IMPORTANT_KEYS_ORDER if k in collected]
             return " | ".join(parts) if parts else "N/A"
 
+        def _collect_host_fields(data):
+            collected = {}
+            if not isinstance(data, dict):
+                return collected
+            for key, val in data.items():
+                norm = key.lower().strip()
+                if norm in IMPORTANT_KEYS and norm not in collected:
+                    if isinstance(val, str) and val.strip() and val.isprintable():
+                        collected[norm] = (key.replace("_", " ").title(), val.strip())
+            return collected
+
         host_data = safe_get(ilo.get_host_data)
+        serial_number = None
         if isinstance(host_data, list):
             collected = {}
             for entry in host_data:
                 if not isinstance(entry, dict):
                     continue
-                for key, val in entry.items():
-                    norm = key.lower().strip()
-                    if norm in IMPORTANT_KEYS and norm not in collected:
-                        if isinstance(val, str) and val.strip() and val.isprintable():
-                            collected[norm] = (key.replace("_", " ").title(), val.strip())
+                for norm, pair in _collect_host_fields(entry).items():
+                    if norm not in collected:
+                        collected[norm] = pair
+            serial_number = collected.get("serial number", (None, None))[1]
             update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         elif isinstance(host_data, dict):
-            collected = {}
-            for key, val in host_data.items():
-                norm = key.lower().strip()
-                if norm in IMPORTANT_KEYS and norm not in collected:
-                    if isinstance(val, str) and val.strip() and val.isprintable():
-                        collected[norm] = (key.replace("_", " ").title(), val.strip())
+            collected = _collect_host_fields(host_data)
+            serial_number = collected.get("serial number", (None, None))[1]
             update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         else:
             update(UNIT_SERVER_HOST_DATA, str(host_data)[:300])
+
+        self._update_device_prefix(
+            asset_tag=asset_val,
+            serial_number=serial_number,
+            server_name=server_name,
+        )
 
 
         # --- iLO informatie ---

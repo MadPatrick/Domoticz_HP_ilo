@@ -180,7 +180,7 @@ class BasePlugin:
         return candidate
 
     def _update_device_prefix(self, asset_tag, serial_number, server_name):
-        # Prioriteit voor herkenbare naam: asset tag -> serienummer -> servernaam -> geconfigureerd host/IP.
+        # Prioriteit voor herkenbare naam: asset tag -> serienummer -> server naam -> geconfigureerd host/IP.
         for raw in (asset_tag, serial_number, server_name, Parameters["Address"]):
             identifier = self._clean_identifier(raw)
             if identifier:

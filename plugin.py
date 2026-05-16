@@ -180,6 +180,7 @@ class BasePlugin:
         return candidate
 
     def _update_device_prefix(self, asset_tag, serial_number, server_name):
+        # Prioriteit voor herkenbare naam: asset tag -> serienummer -> servernaam -> geconfigureerd host/IP.
         for raw in (asset_tag, serial_number, server_name, Parameters["Address"]):
             identifier = self._clean_identifier(raw)
             if identifier:
@@ -192,7 +193,7 @@ class BasePlugin:
             return
 
         self._device_prefix = new_prefix
-        for unit, name, *_ in SENSOR_DEFINITIONS:
+        for unit, name, _type_num, _subtype, _options in SENSOR_DEFINITIONS:
             if unit in Devices:
                 target_name = self._full_device_name(name)
                 if Devices[unit].Name != target_name:

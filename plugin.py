@@ -154,7 +154,7 @@ class BasePlugin:
                     Image=icon,
                     Used=1,
                 ).Create()
-                Domoticz.Log(f"Apparaat aangemaakt: {name} (unit {unit})")
+                Domoticz.Log(f"Apparaat aangemaakt: {self._full_device_name(name)} (unit {unit})")
 
     def _full_device_name(self, base_name):
         if not self._device_prefix:

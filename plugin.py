@@ -55,7 +55,6 @@ UNIT_SERVER_HOST_DATA    = 10
 UNIT_FANS                = 12
 UNIT_CPU_TEMP            = 14
 UNIT_INLET_TEMP          = 15
-UNIT_ILO_IP              = 16
 UNIT_ILO_FIRMWARE        = 17
 UNIT_STORAGE             = 19
 
@@ -74,7 +73,6 @@ SENSOR_DEFINITIONS = [
     (UNIT_FANS,             "Fan 1 Speed",                     243,  6, {}),
     (UNIT_CPU_TEMP,         "CPU Temperature",                 80,  5,  {"Custom": "1;C"}),
     (UNIT_INLET_TEMP,       "Inlet Ambient Temperature",       80,  5,  {"Custom": "1;C"}),
-    (UNIT_ILO_IP,           "iLO IP Address",                  243, 19, {}),
     (UNIT_STORAGE,          "Storage Status",                  243, 22, {}),
     (UNIT_ILO_FIRMWARE,     "iLO Firmware Version",            243, 19, {}),
 ]
@@ -311,27 +309,38 @@ class BasePlugin:
         else:
             update(UNIT_NETWORK_SETTINGS, str(net)[:300])
 
-        # --- Host data: toon alleen leesbare velden, filter rommel ---
-        SKIP_KEYS = {"b64_data", "uuid", "cuuid", "b64data"}
+        # --- Host data: toon alleen de meest relevante velden ---
+        IMPORTANT_KEYS_ORDER = ("product name", "serial number", "family", "date")
+        IMPORTANT_KEYS = set(IMPORTANT_KEYS_ORDER)
+        NO_LABEL_KEYS = {"product name"}  # toon alleen de waarde, zonder label
+
+        def _fmt_host_field(norm, lbl, val):
+            return val if norm in NO_LABEL_KEYS else f"{lbl}: {val}"
+
+        def _render_host_data(collected):
+            parts = [_fmt_host_field(k, *collected[k]) for k in IMPORTANT_KEYS_ORDER if k in collected]
+            return " | ".join(parts) if parts else "N/A"
+
         host_data = safe_get(ilo.get_host_data)
         if isinstance(host_data, list):
-            parts = []
+            collected = {}
             for entry in host_data:
                 if not isinstance(entry, dict):
                     continue
                 for key, val in entry.items():
-                    if key.lower().replace(" ", "_") in SKIP_KEYS:
-                        continue
-                    if isinstance(val, str) and val.strip() and len(val) < 80:
-                        if val.isprintable() and not (chr(0) in val):
-                            parts.append(f"{key.replace('_',' ').title()}: {val.strip()}")
-            update(UNIT_SERVER_HOST_DATA, " | ".join(parts) if parts else "N/A")
+                    norm = key.lower().strip()
+                    if norm in IMPORTANT_KEYS and norm not in collected:
+                        if isinstance(val, str) and val.strip() and val.isprintable():
+                            collected[norm] = (key.replace("_", " ").title(), val.strip())
+            update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         elif isinstance(host_data, dict):
-            parts = [f"{k.replace('_',' ').title()}: {v}"
-                     for k, v in host_data.items()
-                     if k.lower().replace(" ", "_") not in SKIP_KEYS
-                     and isinstance(v, str) and v.strip() and len(v) < 80]
-            update(UNIT_SERVER_HOST_DATA, " | ".join(parts) if parts else "N/A")
+            collected = {}
+            for key, val in host_data.items():
+                norm = key.lower().strip()
+                if norm in IMPORTANT_KEYS and norm not in collected:
+                    if isinstance(val, str) and val.strip() and val.isprintable():
+                        collected[norm] = (key.replace("_", " ").title(), val.strip())
+            update(UNIT_SERVER_HOST_DATA, _render_host_data(collected))
         else:
             update(UNIT_SERVER_HOST_DATA, str(host_data)[:300])
 
@@ -347,14 +356,6 @@ class BasePlugin:
                 update(UNIT_ILO_FIRMWARE, str(ilo_info))
         except Exception as err:
             Domoticz.Error(f"Fout bij get_fw_version: {err}")
-
-        try:
-            net = ilo.get_network_settings()
-            if isinstance(net, dict):
-                update(UNIT_ILO_IP, net.get("ip_address", "?"))
-        except Exception as err:
-            Domoticz.Error(f"Fout bij iLO IP: {err}")
-
 
         # --- Storage / RAID ---
         try:

@@ -1,16 +1,16 @@
 # HP Integrated Lights-Out (iLO) – Domoticz Plugin
 
-Een Domoticz Python-plugin om sensordata uit te lezen van een HP iLO-interface.
+A Domoticz Python plugin to read sensor data from an HP iLO interface.
 
 ---
 
-## Vereisten
+## Requirements
 
-- Domoticz met ondersteuning voor Python-plugins (versie 2020.2 of nieuwer aanbevolen)
+- Domoticz with Python plugin support (version 2020.2 or newer recommended)
 - Python 3
-- De Python-bibliotheek `python-hpilo`
+- The `python-hpilo` Python library
 
-### Python-bibliotheek installeren
+### Install the Python library
 
 ```bash
 pip3 install python-hpilo
@@ -18,24 +18,24 @@ pip3 install python-hpilo
 
 ---
 
-## Installatie
+## Installation
 
-1. Navigeer naar de Domoticz plugins-map:
+1. Navigate to the Domoticz plugins directory:
 
    ```bash
-   cd /home/<gebruiker>/domoticz/plugins
+   cd /home/<user>/domoticz/plugins
    ```
 
-2. Maak een map aan voor de plugin en plaats daarin `plugin.py`:
+2. Create a directory for the plugin and place `plugin.py` in it:
 
    ```bash
    mkdir HP_ilo
    cd HP_ilo
-   # Kopieer plugin.py naar deze map, of clone de repository:
+   # Copy plugin.py into this directory, or clone the repository:
    git clone https://github.com/MadPatrick/HP_ilo.git .
    ```
 
-3. Herstart Domoticz:
+3. Restart Domoticz:
 
    ```bash
    sudo systemctl restart domoticz
@@ -43,49 +43,49 @@ pip3 install python-hpilo
 
 ---
 
-## Configuratie
+## Configuration
 
-Ga in Domoticz naar **Instellingen → Hardware** en voeg een nieuw hardware-item toe van het type **HP Integrated Lights-Out (iLO)**.
+In Domoticz, go to **Settings → Hardware** and add a new hardware device of type **HP Integrated Lights-Out (iLO)**.
 
-| Parameter | Omschrijving | Standaard |
+| Parameter | Description | Default |
 |-----------|-------------|-----------|
-| IP-adres / Hostnaam | Het IP-adres of de hostnaam van de iLO-interface | `192.168.1.1` |
-| Poort | TCP-poort van de iLO-interface | `443` |
-| Gebruikersnaam | iLO-inloggebruikersnaam | `Administrator` |
-| Wachtwoord | iLO-inlogwachtwoord | *(leeg)* |
-| Poll-interval (sec) | Hoe vaak de gegevens worden opgehaald (10–3600 sec) | `300` |
-| Debug | Uitgebreide logberichten in- of uitschakelen | `Uit` |
+| IP Address / Hostname | The IP address or hostname of the iLO interface | `192.168.1.1` |
+| Port | TCP port of the iLO interface | `443` |
+| Username | iLO login username | `Administrator` |
+| Password | iLO login password | *(empty)* |
+| Poll Interval (sec) | How often data is retrieved (10–3600 sec) | `300` |
+| Debug | Enable or disable verbose logging | `Off` |
 
 ---
 
-## Aangemaakte apparaten
+## Created devices
 
-Na de eerste verbinding worden de volgende Domoticz-apparaten automatisch aangemaakt:
+After the first successful connection, the following Domoticz devices are created automatically:
 
-| Unit | Naam | Omschrijving |
+| Unit | Name | Description |
 |------|------|-------------|
-| 1 | Server Name | Naam van de server |
-| 2 | Server FQDN | Volledig gekwalificeerde domeinnaam |
-| 3 | Server Power State | Voedingsstatus (aan/uit) |
-| 4 | Server Power Readings | Actueel, gemiddeld, max. en min. vermogen |
-| 5 | Server Power On Time (min) | Tijd ingeschakeld in minuten |
-| 6 | Server Asset Tag | Asset-tag van de server |
-| 7 | Server UID Light | Status van het UID-lampje |
-| 8 | Server Health | Gezondheidsoverzicht van de hardware |
-| 9 | Network Settings | IP-adres, subnetmasker, gateway, DNS en MAC |
-| 10 | Server Host Data | Ruwe host-data |
-| 11 | Server OA Info | Onboard Administrator-informatie |
+| 1 | Server Name | Name of the server |
+| 2 | Server FQDN | Fully qualified domain name |
+| 3 | Server Power State | Power status (on/off) |
+| 4 | Server Power Readings | Current, average, max, and min power |
+| 5 | Server Power On Time (min) | Time powered on in minutes |
+| 6 | Server Asset Tag | Server asset tag |
+| 7 | Server UID Light | UID light status |
+| 8 | Server Health | Hardware health overview |
+| 9 | Network Settings | IP address, subnet mask, gateway, DNS, and MAC |
+| 10 | Server Host Data | Raw host data |
+| 11 | Server OA Info | Onboard Administrator information |
 
 ---
 
-## Problemen oplossen
+## Troubleshooting
 
-- **iLO login mislukt** – Controleer gebruikersnaam en wachtwoord.
-- **iLO communicatiefout** – Controleer het IP-adres, de poort en of de iLO bereikbaar is vanuit de Domoticz-server.
-- Schakel **Debug** in bij de hardware-instellingen voor gedetailleerde logberichten in het Domoticz-logboek.
+- **iLO login failed** – Verify the username and password.
+- **iLO communication error** – Check the IP address, port, and whether iLO is reachable from the Domoticz server.
+- Enable **Debug** in hardware settings for detailed log messages in the Domoticz log.
 
 ---
 
-## Licentie
+## License
 
-Dit project is geporteerd vanuit de [Home Assistant HP iLO-integratie](https://www.home-assistant.io/integrations/hp_ilo).
+This project was ported from the [Home Assistant HP iLO integration](https://www.home-assistant.io/integrations/hp_ilo).

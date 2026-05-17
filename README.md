@@ -8,12 +8,12 @@ A Domoticz Python plugin to read sensor data from an HP iLO interface.
 
 - Domoticz with Python plugin support (version 2020.2 or newer recommended)
 - Python 3
-- The `python-hpilo` Python library
+- The `redfish` Python library
 
 ### Install the Python library
 
 ```bash
-pip3 install python-hpilo
+pip3 install redfish
 ```
 
 ---

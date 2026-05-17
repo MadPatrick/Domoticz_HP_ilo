@@ -136,7 +136,7 @@ class BasePlugin:
             self._connect_and_update()
 
     def _device_name(self, base_name):
-        return "{} - {}".format(base_name, self.server_id) if self.server_id else base_name
+        return "{} - {}".format(self.server_id, base_name) if self.server_id else base_name
 
     def _create_devices(self):
         icon_id = Images["hpilo"].ID if "hpilo" in Images else 0
@@ -300,8 +300,6 @@ class BasePlugin:
                 Devices[UNIT_STORAGE].Update(nValue=0, sValue="No storage data")
         except Exception as err:
             Domoticz.Error("Storage error: {}".format(err))
-
-        Domoticz.Log("Redfish update completed")
 
 # --- Domoticz Hooks ---
 

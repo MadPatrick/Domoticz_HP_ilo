@@ -107,7 +107,6 @@ class BasePlugin:
         self.poll_interval       = 300
         self.heartbeat_count     = 0
         self.heartbeats_per_poll = 1
-        self.server_id           = ""
 
     def onStart(self):
         self.debug = Parameters["Mode6"] == "1"
@@ -124,6 +123,7 @@ class BasePlugin:
         if "hpilo" not in Images:
             Domoticz.Image("hpilo_icons.zip").Create()
             Domoticz.Log("Created custom icon: hpilo")
+        self._create_devices()
         self._connect_and_update()
 
     def onStop(self):
@@ -135,16 +135,12 @@ class BasePlugin:
             self.heartbeat_count = 0
             self._connect_and_update()
 
-    def _device_name(self, base_name):
-        return "{} - {}".format(self.server_id, base_name) if self.server_id else base_name
-
     def _create_devices(self):
         icon_id = Images["hpilo"].ID if "hpilo" in Images else 0
-        for unit, base_name, type_num, subtype, options in SENSOR_DEFINITIONS:
-            full_name = self._device_name(base_name)
+        for unit, name, type_num, subtype, options in SENSOR_DEFINITIONS:
             if unit not in Devices:
                 Domoticz.Device(
-                    Name=full_name,
+                    Name=name,
                     Unit=unit,
                     Type=type_num,
                     Subtype=subtype,
@@ -152,14 +148,7 @@ class BasePlugin:
                     Image=icon_id,
                     Used=1
                 ).Create()
-                Domoticz.Log("Created device: {}".format(full_name))
-            elif self.server_id and Devices[unit].Name != full_name:
-                Devices[unit].Update(
-                    nValue=Devices[unit].nValue,
-                    sValue=Devices[unit].sValue,
-                    Name=full_name
-                )
-                Domoticz.Log("Renamed device to: {}".format(full_name))
+                Domoticz.Log("Created device: {}".format(name))
 
     def _update_device(self, unit, value, nvalue=0):
         if unit not in Devices:
@@ -210,15 +199,9 @@ class BasePlugin:
             model_str   = "{} | BIOS: {}".format(model, bios) if bios else model
             health      = system.get("Status", {}).get("Health", "Unknown")
 
-            asset_tag   = (system.get("AssetTag") or "").strip()
-            serial_num  = (system.get("SerialNumber") or "Unknown").strip()
-            self.server_id = asset_tag if asset_tag and asset_tag.upper() != "UNKNOWN" else serial_num
-
-            self._create_devices()
-
             self._update_device(UNIT_SERVER_NAME, system.get("HostName",     "Unknown"))
             self._update_device(UNIT_POWER_STATE, system.get("PowerState",   "Unknown"))
-            self._update_device(UNIT_SERIAL,      serial_num)
+            self._update_device(UNIT_SERIAL,      system.get("SerialNumber", "Unknown"))
             self._update_device(UNIT_MODEL,       model_str)
 
             if str(health).upper() == "OK":
@@ -279,27 +262,50 @@ class BasePlugin:
         try:
             system_uri = self._get_first_member_uri(rf, systems_path)
             storage    = rf.get(system_uri + "/Storage")
-            bad, ok    = [], []
+            drives     = []
+            any_bad    = False
+
             for member in storage.get("Members", []):
                 uri = member.get("@odata.id")
                 if not uri:
                     continue
-                ctrl   = rf.get(uri)
-                name   = ctrl.get("Name", "Controller")
-                status = ctrl.get("Status", {}).get("Health", "Unknown")
-                if str(status).upper() != "OK":
-                    bad.append("{}: {}".format(name, status))
-                else:
-                    ok.append(name)
+                ctrl = rf.get(uri)
+                for drive_ref in ctrl.get("Drives", []):
+                    drive_uri = drive_ref.get("@odata.id")
+                    if not drive_uri:
+                        continue
+                    try:
+                        drive       = rf.get(drive_uri)
+                        health      = drive.get("Status", {}).get("Health", "Unknown")
+                        capacity    = drive.get("CapacityBytes", 0)
+                        capacity_gb = round(capacity / 1e9, 1) if capacity else 0
+                        media       = drive.get("MediaType", "Unknown")
+                        drives.append({
+                            "gb":     capacity_gb,
+                            "media":  media,
+                            "health": health
+                        })
+                        if str(health).upper() != "OK":
+                            any_bad = True
+                    except Exception:
+                        pass
 
-            if bad:
-                Devices[UNIT_STORAGE].Update(nValue=4, sValue=" | ".join(bad))
-            elif ok:
-                Devices[UNIT_STORAGE].Update(nValue=1, sValue="All OK: {}".format(", ".join(ok)))
+            if not drives:
+                Devices[UNIT_STORAGE].Update(nValue=0, sValue="No drives found")
             else:
-                Devices[UNIT_STORAGE].Update(nValue=0, sValue="No storage data")
+                parts = []
+                for i, d in enumerate(drives, 1):
+                    parts.append("Drive {}: {} GB | {} | {}".format(
+                        i, d["gb"], d["media"], d["health"]
+                    ))
+                sValue = "\n".join(parts)
+                nValue = 4 if any_bad else 1
+                Devices[UNIT_STORAGE].Update(nValue=nValue, sValue=sValue)
+
         except Exception as err:
             Domoticz.Error("Storage error: {}".format(err))
+
+        Domoticz.Log("Redfish update completed")
 
 # --- Domoticz Hooks ---
 

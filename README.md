@@ -1,6 +1,6 @@
 # HP Integrated Lights-Out (iLO) – Domoticz Plugin
 
-A Domoticz Python plugin to read sensor data from an HP iLO interface.
+A Domoticz Python plugin to read sensor data from an HP iLO interface via Redfish.
 
 ---
 
@@ -26,11 +26,10 @@ pip3 install redfish
    cd /home/<user>/domoticz/plugins
    ```
 
-2. Create a directory for the plugin and place `plugin.py` in it:
+2. Clone the repository into a subdirectory:
 
    ```bash
-   # Clone the repository:
-   git clone https://github.com/MadPatrick/HP_ilo.git HP_ilo
+   git clone https://github.com/MadPatrick/Domoticz_HP_ilo.git HP_ilo
    ```
 
 3. Restart Domoticz:
@@ -46,13 +45,22 @@ pip3 install redfish
 In Domoticz, go to **Settings → Hardware** and add a new hardware device of type **HP Integrated Lights-Out (iLO)**.
 
 | Parameter | Description | Default |
-|-----------|-------------|-----------|
+|-----------|-------------|---------|
 | IP Address / Hostname | The IP address or hostname of the iLO interface | `192.168.1.1` |
 | Port | TCP port of the iLO interface | `443` |
 | Username | iLO login username | `Administrator` |
 | Password | iLO login password | *(empty)* |
-| Poll Interval (sec) | How often data is retrieved (10–3600 sec) | `300` |
+| Poll interval (sec) | How often data is retrieved (in seconds) | `300` |
+| Protocol | Connection protocol | `Automatic` |
 | Debug | Enable or disable verbose logging | `Off` |
+
+**Protocol options:**
+
+| Value | Description |
+|-------|-------------|
+| `Automatic` | Let the plugin choose the best protocol |
+| `ILO (XML/SSL)` | Force iLO XML over SSL |
+| `LIPB (local)` | Force local LIPB interface |
 
 ---
 
@@ -60,30 +68,19 @@ In Domoticz, go to **Settings → Hardware** and add a new hardware device of ty
 
 After the first successful connection, the following Domoticz devices are created automatically:
 
-Device names are automatically prefixed with a server identifier in this order:
-1. Asset tag
-2. Serial number
-3. Server name
-4. Configured iLO host/IP
-
-Example: `[ASSET-1234] Server Name`
-
 | Unit | Name | Description |
 |------|------|-------------|
-| 1 | `[identifier] Server Name` | Name of the server |
-| 2 | `[identifier] Server FQDN` | Fully qualified domain name |
-| 3 | `[identifier] Server Power State` | Power status (on/off) |
-| 4 | `[identifier] Server Power On Time` | Time powered on (days/hours/minutes) |
-| 5 | `[identifier] Server Asset Tag` | Server asset tag |
-| 6 | `[identifier] Server UID Light` | UID light status |
-| 7 | `[identifier] Server Health` | Hardware health overview |
-| 8 | `[identifier] Network Settings` | IP address, subnet mask, gateway, DNS, and MAC |
-| 9 | `[identifier] Server Host Data` | Key host data (product/serial/etc.) |
-| 10 | `[identifier] Fan 1 Speed` | Fan speed |
-| 11 | `[identifier] CPU Temperature` | CPU temperature |
-| 12 | `[identifier] Inlet Ambient Temperature` | Inlet temperature |
-| 13 | `[identifier] iLO Firmware Version` | iLO firmware version |
-| 14 | `[identifier] Storage Status` | Storage/RAID health |
+| 1 | `Server Name` | Hostname of the server |
+| 2 | `Power State` | Power status (On/Off) |
+| 3 | `Health` | Overall hardware health (OK / degraded) |
+| 4 | `Fan Speed` | Speed of the first fan (RPM) |
+| 5 | `CPU Temperature` | CPU temperature (°C) |
+| 6 | `Inlet Temperature` | Inlet ambient temperature (°C) |
+| 7 | `iLO Firmware` | iLO firmware version |
+| 8 | `Storage` | Storage/RAID health status |
+| 9 | `Network` | IP address and MAC address of the iLO interface |
+| 10 | `Serial Number` | Server serial number |
+| 11 | `Model` | Server model and BIOS version |
 
 ---
 

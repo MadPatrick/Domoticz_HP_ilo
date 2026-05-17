@@ -29,10 +29,8 @@ pip3 install redfish
 2. Create a directory for the plugin and place `plugin.py` in it:
 
    ```bash
-   mkdir HP_ilo
-   cd HP_ilo
-   # Copy plugin.py into this directory, or clone the repository:
-   git clone https://github.com/MadPatrick/HP_ilo.git .
+   # Clone the repository:
+   git clone https://github.com/MadPatrick/HP_ilo.git HP_ilo
    ```
 
 3. Restart Domoticz:

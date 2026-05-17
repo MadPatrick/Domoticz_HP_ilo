@@ -107,6 +107,7 @@ class BasePlugin:
         self.poll_interval       = 300
         self.heartbeat_count     = 0
         self.heartbeats_per_poll = 1
+        self.server_id           = ""
 
     def onStart(self):
         self.debug = Parameters["Mode6"] == "1"
@@ -123,7 +124,6 @@ class BasePlugin:
         if "hpilo" not in Images:
             Domoticz.Image("hpilo_icons.zip").Create()
             Domoticz.Log("Created custom icon: hpilo")
-        self._create_devices()
         self._connect_and_update()
 
     def onStop(self):
@@ -135,12 +135,16 @@ class BasePlugin:
             self.heartbeat_count = 0
             self._connect_and_update()
 
+    def _device_name(self, base_name):
+        return "{} - {}".format(self.server_id, base_name) if self.server_id else base_name
+
     def _create_devices(self):
         icon_id = Images["hpilo"].ID if "hpilo" in Images else 0
-        for unit, name, type_num, subtype, options in SENSOR_DEFINITIONS:
+        for unit, base_name, type_num, subtype, options in SENSOR_DEFINITIONS:
+            full_name = self._device_name(base_name)
             if unit not in Devices:
                 Domoticz.Device(
-                    Name=name,
+                    Name=full_name,
                     Unit=unit,
                     Type=type_num,
                     Subtype=subtype,
@@ -148,7 +152,14 @@ class BasePlugin:
                     Image=icon_id,
                     Used=1
                 ).Create()
-                Domoticz.Log("Created device: {}".format(name))
+                Domoticz.Log("Created device: {}".format(full_name))
+            elif self.server_id and Devices[unit].Name != full_name:
+                Devices[unit].Update(
+                    nValue=Devices[unit].nValue,
+                    sValue=Devices[unit].sValue,
+                    Name=full_name
+                )
+                Domoticz.Log("Renamed device to: {}".format(full_name))
 
     def _update_device(self, unit, value, nvalue=0):
         if unit not in Devices:
@@ -199,9 +210,15 @@ class BasePlugin:
             model_str   = "{} | BIOS: {}".format(model, bios) if bios else model
             health      = system.get("Status", {}).get("Health", "Unknown")
 
+            asset_tag   = (system.get("AssetTag") or "").strip()
+            serial_num  = (system.get("SerialNumber") or "Unknown").strip()
+            self.server_id = asset_tag if asset_tag and asset_tag.upper() != "UNKNOWN" else serial_num
+
+            self._create_devices()
+
             self._update_device(UNIT_SERVER_NAME, system.get("HostName",     "Unknown"))
             self._update_device(UNIT_POWER_STATE, system.get("PowerState",   "Unknown"))
-            self._update_device(UNIT_SERIAL,      system.get("SerialNumber", "Unknown"))
+            self._update_device(UNIT_SERIAL,      serial_num)
             self._update_device(UNIT_MODEL,       model_str)
 
             if str(health).upper() == "OK":
@@ -283,8 +300,6 @@ class BasePlugin:
                 Devices[UNIT_STORAGE].Update(nValue=0, sValue="No storage data")
         except Exception as err:
             Domoticz.Error("Storage error: {}".format(err))
-
-        Domoticz.Log("Redfish update completed")
 
 # --- Domoticz Hooks ---
 

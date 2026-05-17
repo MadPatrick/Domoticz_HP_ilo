@@ -19,13 +19,6 @@ Version: 1.0.1
         <param field="Username" label="Username"              width="150px" required="true" default="Administrator"/>
         <param field="Password" label="Password"              width="150px" required="true" default="" password="true"/>
         <param field="Mode1"    label="Poll interval (sec)"   width="75px"  required="true" default="300"/>
-        <param field="Mode2"    label="Protocol"              width="120px">
-            <options>
-                <option label="Automatic" value="AUTO" default="true"/>
-                <option label="ILO (XML/SSL)" value="ILO"/>
-                <option label="LIPB (local)" value="LIPB"/>
-            </options>
-        </param>
         <param field="Mode6"    label="Debug"                 width="100px">
             <options>
                 <option label="Off" value="0" default="true"/>
@@ -295,8 +288,8 @@ class BasePlugin:
             else:
                 parts = []
                 for i, d in enumerate(drives, 1):
-                    parts.append("Drive {}: {} GB | {} | {}".format(
-                        i, d["gb"], d["media"], d["health"]
+                    parts.append("Storage {}: {} | {} | {} GB".format(
+                        i, d["health"], d["media"], d["gb"]
                     ))
                 sValue = "\n".join(parts)
                 nValue = 4 if any_bad else 1
